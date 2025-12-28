@@ -111,6 +111,66 @@ function extractTimeSeries(obj: any) {
     }
   }
   
+  // Check for Indian Market API format (TwelveData)
+  if (obj.symbol && obj.exchange && obj.close !== undefined && obj.datetime) {
+    console.log("Found Indian Market API quote format")
+    const datetime = obj.datetime
+    const date = datetime.split(' ')[0] || new Date().toISOString().slice(0, 10)
+    const open = parseFloat(obj.open)
+    const high = parseFloat(obj.high)
+    const low = parseFloat(obj.low)
+    const close = parseFloat(obj.close)
+    const prevClose = parseFloat(obj.previous_close || close)
+    const volume = parseFloat(obj.volume)
+    
+    // Create simulated intraday data points for Indian market
+    return {
+      type: "indian",
+      rows: [
+        {
+          date: date + " 09:15",
+          open: prevClose,
+          high: prevClose,
+          low: prevClose,
+          close: open,
+          volume: undefined,
+        },
+        {
+          date: date + " 11:30",
+          open: open,
+          high: Math.max(open, high * 0.7 + open * 0.3),
+          low: Math.min(open, low * 0.7 + open * 0.3),
+          close: high > open ? high * 0.6 + open * 0.4 : low * 0.6 + open * 0.4,
+          volume: undefined,
+        },
+        {
+          date: date + " 13:00",
+          open: high > open ? high * 0.6 + open * 0.4 : low * 0.6 + open * 0.4,
+          high: high,
+          low: low,
+          close: (high + low) / 2,
+          volume: undefined,
+        },
+        {
+          date: date + " 14:30",
+          open: (high + low) / 2,
+          high: Math.max((high + low) / 2, close * 0.6 + high * 0.2 + low * 0.2),
+          low: Math.min((high + low) / 2, close * 0.6 + high * 0.2 + low * 0.2),
+          close: close * 0.8 + ((high + low) / 2) * 0.2,
+          volume: undefined,
+        },
+        {
+          date: date + " 15:30",
+          open: close * 0.8 + ((high + low) / 2) * 0.2,
+          high: Math.max(close, close * 0.8 + ((high + low) / 2) * 0.2),
+          low: Math.min(close, close * 0.8 + ((high + low) / 2) * 0.2),
+          close: close,
+          volume: volume,
+        }
+      ],
+    }
+  }
+  
   // Check if it's a single quote response (c, d, dp, h, l, o, pc, t) - Finnhub format
   if (obj.c !== undefined && obj.t !== undefined && !Array.isArray(obj.c)) {
     console.log("Found single quote data, converting to expanded format for better visualization")
@@ -242,7 +302,7 @@ export default function WidgetDetail({ id }: { id: string }) {
   const { rows, latest, prev, changeAbs, changePct } = useMemo(() => {
     const ex = extractTimeSeries(data)
     let arr: any[] = []
-    if (ex?.type === "finnhub" || ex?.type === "alphavantage") {
+    if (ex?.type === "finnhub" || ex?.type === "alphavantage" || ex?.type === "indian") {
       arr = (ex.rows as any[]).sort((a, b) => (a.date > b.date ? 1 : -1))
     } else if (ex?.type === "av") {
       arr = mapAVSeriesToArray(ex.series)
@@ -265,6 +325,10 @@ export default function WidgetDetail({ id }: { id: string }) {
       const quote = data["Global Quote"]
       chAbs = parseFloat(quote["09. change"])
       chPct = parseFloat(quote["10. change percent"]?.replace("%", ""))
+    } else if (data?.change !== undefined && data?.percent_change !== undefined) {
+      // Use the change values from Indian Market API (TwelveData)
+      chAbs = parseFloat(data.change)
+      chPct = parseFloat(data.percent_change)
     } else if (last && secondLast && last.close != null && secondLast.close != null) {
       // Calculate from historical data
       chAbs = last.close - secondLast.close

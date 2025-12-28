@@ -1,6 +1,6 @@
 // Core types for widgets, providers, and mapping
 
-export type ProviderId = "alphaVantage" | "finnhub"
+export type ProviderId = "alphaVantage" | "finnhub" | "indian"
 export type WidgetType = "card" | "table" | "line"
 export type FieldFormat = "number" | "currency" | "percent"
 

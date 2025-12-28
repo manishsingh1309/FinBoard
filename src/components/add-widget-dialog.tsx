@@ -21,7 +21,7 @@ function candleWindow(days: number) {
 export function AddWidgetDialog({ open, onOpenChange }: Props) {
   const [name, setName] = useState("")
   const [type, setType] = useState<WidgetType>("card")
-  const [provider, setProvider] = useState<"finnhub" | "alphaVantage">("finnhub")
+  const [provider, setProvider] = useState<"finnhub" | "alphaVantage" | "indian">("finnhub")
   const [symbol, setSymbol] = useState("AAPL")
   const [refreshMs, setRefreshMs] = useState(60_000)
 
@@ -40,7 +40,7 @@ export function AddWidgetDialog({ open, onOpenChange }: Props) {
         title,
         name: title,
         provider,
-        endpoint: provider === "finnhub" ? "/quote" : "GLOBAL_QUOTE",
+        endpoint: provider === "finnhub" ? "/quote" : provider === "alphaVantage" ? "GLOBAL_QUOTE" : "/quote",
         params: { symbol },
         refreshMs,
         mapping: { paths: ["c"], format: "currency" },
@@ -52,12 +52,12 @@ export function AddWidgetDialog({ open, onOpenChange }: Props) {
         title,
         name: title,
         provider,
-        endpoint: provider === "finnhub" ? "/stock/candle" : provider === "alphaVantage" ? "TIME_SERIES_DAILY" : "/api/candle",
+        endpoint: provider === "finnhub" ? "/stock/candle" : provider === "alphaVantage" ? "TIME_SERIES_DAILY" : "/time_series",
         params: provider === "finnhub" 
           ? { symbol, resolution: "D", from, to }
           : provider === "alphaVantage"
           ? { symbol }
-          : { symbol },
+          : { symbol, interval: "1day", outputsize: 30 },
         refreshMs,
         mapping: { x: "time", y: "close" },
       } as any)
@@ -89,6 +89,7 @@ export function AddWidgetDialog({ open, onOpenChange }: Props) {
                 <SelectContent className="bg-[color:var(--color-popover)] text-[color:var(--color-popover-foreground)] border border-[color:var(--color-border)]/60">
                   <SelectItem value="finnhub">Finnhub (US Stocks)</SelectItem>
                   <SelectItem value="alphaVantage">Alpha Vantage (Global)</SelectItem>
+                  <SelectItem value="indian">Indian Market (NSE/BSE)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-[color:var(--color-muted-foreground)]/80">
@@ -124,10 +125,14 @@ export function AddWidgetDialog({ open, onOpenChange }: Props) {
               <Input
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                placeholder="AAPL"
+                placeholder={provider === "indian" ? "RELIANCE.NSE" : "AAPL"}
                 className="bg-[color:var(--color-card)]/15 border border-[color:var(--color-border)]/50 text-[color:var(--color-popover-foreground)] placeholder:text-[color:var(--color-muted-foreground)]/70"
               />
-              <p className="text-xs text-[color:var(--color-muted-foreground)]/80">Any ticker supported by Finnhub.</p>
+              <p className="text-xs text-[color:var(--color-muted-foreground)]/80">
+                {provider === "indian" 
+                  ? "Format: SYMBOL.NSE or SYMBOL.BSE (e.g., RELIANCE.NSE, TCS.BSE)" 
+                  : "Any ticker supported by your selected provider."}
+              </p>
             </div>
           </div>
 

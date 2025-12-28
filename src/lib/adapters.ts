@@ -1,7 +1,7 @@
 import { normalizeFrom } from "@/services/adapters"
 
 export type AdapterRequest = {
-  provider: "alphaVantage" | "finnhub"
+  provider: "alphaVantage" | "finnhub" | "indian"
   endpoint: string
   params: Record<string, any>
 }
@@ -47,6 +47,14 @@ export const adapters: AdapterMeta[] = [
     endpoint: "TIME_SERIES_DAILY",
     defaultParams: { symbol: "IBM" },
     description: "Daily OHLC via Alpha Vantage",
+  },
+  {
+    id: "indian-quote",
+    label: "Indian Market • Stock Quote",
+    provider: "indian",
+    endpoint: "/quote",
+    defaultParams: { symbol: "RELIANCE.NSE" },
+    description: "Live quotes for Indian stocks (NSE/BSE)",
   },
 ]
 

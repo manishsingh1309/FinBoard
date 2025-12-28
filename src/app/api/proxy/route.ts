@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 
 type Body = {
-  provider: "alphaVantage" | "finnhub"
+  provider: "alphaVantage" | "finnhub" | "indian"
   endpoint: string
   params?: Record<string, string>
   intent?: "preview" | "data"
@@ -48,6 +48,12 @@ export async function POST(req: NextRequest) {
       const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
       const sp = new URLSearchParams({ token: key, ...asStringRecord(params) })
       url = `${base}${path}?${sp.toString()}`
+    } else if (provider === "indian") {
+      // Indian stocks work with Alpha Vantage using .BSE or .NSE suffix
+      const key = process.env.ALPHA_VANTAGE_API_KEY
+      if (!key) return NextResponse.json({ error: "Missing ALPHA_VANTAGE_API_KEY" }, { status: 500 })
+      const sp = new URLSearchParams({ function: "GLOBAL_QUOTE", apikey: key, ...asStringRecord(params) })
+      url = `https://www.alphavantage.co/query?${sp.toString()}`
     } else {
       return NextResponse.json({ error: "Unsupported provider" }, { status: 400 })
     }

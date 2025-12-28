@@ -111,6 +111,13 @@ export function normalizeFrom(provider: string, endpoint: string, json: any): Ca
     // Fall back to time series
     return adaptAlphaVantageDaily(json)
   }
+  // Indian Market API
+  if (p === "indian") {
+    // Indian stocks use Alpha Vantage Global Quote format
+    if (json?.["Global Quote"]) {
+      return adaptAlphaVantageGlobalQuote(json)
+    }
+  }
   // default try Alpha Vantage
   return adaptAlphaVantageDaily(json)
 }
